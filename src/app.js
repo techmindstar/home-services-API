@@ -63,10 +63,10 @@ connectDB()
 
 // Routes
 app.use("/api/auth", authRoutes);
-// app.use("/api/users", userRoutes);
-// app.use('/api/addresses', addressRoutes);
-// app.use('/api/services', serviceRoutes);
-// app.use('/api/admin', adminRoutes);
+app.use("/api/users", userRoutes);
+app.use('/api/addresses', addressRoutes);
+app.use('/api/services', serviceRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
