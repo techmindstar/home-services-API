@@ -110,7 +110,6 @@ class AuthService {
       const token = jwt.sign(
         { id: user._id, phoneNumber: user.phoneNumber },
         JWT_SECRET,
-        { expiresIn: JWT_EXPIRY }
       );
   
       // Delete the used OTP

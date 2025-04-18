@@ -17,7 +17,7 @@ const verifyToken = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
 
     // Verify token
-    const decoded = jwt.verify(token, appConfig.jwt_secret);
+    const decoded = jwt.verify(token, appConfig.JWT_SECRET);
 
     // Add user to request
     req.user = decoded;
@@ -106,7 +106,7 @@ const generateToken = (user) => {
       email: user.email,
       role: user.role
     },
-    appConfig.jwt_secret,
+    appConfig.JWT_SECRET,
     { expiresIn: appConfig.jwt_expires_in }
   );
 };
