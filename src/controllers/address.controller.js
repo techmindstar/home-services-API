@@ -8,7 +8,7 @@ const addressService = new AddressService();
 const createAddress = async (req, res, next) => {
   try {
     const addressData = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id;
     logger.info('Creating new address', { userId });
 
     const address = await addressService.createAddress(addressData, userId);
@@ -25,9 +25,9 @@ const createAddress = async (req, res, next) => {
 // Get all addresses for a user
 const getAllAddresses = async (req, res, next) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || appConfig.pagination.defaultLimit;
+    const limit = parseInt(req.query.limit) || 5;
 
     logger.info('Getting all addresses', { userId, page, limit });
 
@@ -47,11 +47,11 @@ const getAllAddresses = async (req, res, next) => {
 // Get single address
 const getAddress = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const userId = req.user._id;
-    logger.info('Getting address by ID', { addressId: id, userId });
+    const { addressId } = req.params;
+    const userId = req.user.id;
+    logger.info('Getting address by ID', { addressId: addressId, userId });
 
-    const address = await addressService.getAddress(id, userId);
+    const address = await addressService.getAddress(addressId, userId);
 
     res.status(200).json({
       status: 'success',
@@ -65,12 +65,12 @@ const getAddress = async (req, res, next) => {
 // Update address
 const updateAddress = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const userId = req.user._id;
+    const { addressId } = req.params;
+    const userId = req.user.id;
     const updateData = req.body;
-    logger.info('Updating address', { addressId: id, userId });
+    logger.info('Updating address', { addressId: addressId, userId });
 
-    const address = await addressService.updateAddress(id, userId, updateData);
+    const address = await addressService.updateAddress(addressId, userId, updateData);
 
     res.status(200).json({
       status: 'success',
@@ -84,15 +84,15 @@ const updateAddress = async (req, res, next) => {
 // Delete address
 const deleteAddress = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const userId = req.user._id;
-    logger.info('Deleting address', { addressId: id, userId });
+    const { addressId } = req.params;
+    const userId = req.user.id;
+    logger.info('Deleting address', { addressId: addressId, userId });
 
-    await addressService.deleteAddress(id, userId);
+   const response = await addressService.deleteAddress(addressId, userId);
 
-    res.status(204).json({
+    res.status(200).json({
       status: 'success',
-      data: null
+      data: response
     });
   } catch (error) {
     next(error);

@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const SubserviceSchema = new mongoose.Schema({
     name: { type: String, required: true },
     serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service", required: true }, // Linked to a service

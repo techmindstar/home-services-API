@@ -2,7 +2,7 @@ const Service = require("../models/service.model");
 const { logger } = require("../utils/logger.util");
 const { NotFoundError, DatabaseError, ValidationError } = require("../utils/error.util");
 const appConfig = require("../config/app.config");
-
+const Subservice = require("../models/subservice.model");
 class ServiceService {
   async getAllServices(page = 1, limit = appConfig.pagination.defaultLimit) {
     try {
@@ -104,26 +104,11 @@ class ServiceService {
     try {
       logger.info('Updating service', { serviceId, updateData });
 
-      // Filter allowed fields
-      const allowedFields = [
-        'name', 'description', 'process', 'originalPrice', 
-        'discountedPrice', 'duration', 'subservices'
-      ];
-      
-      const filteredData = Object.keys(updateData)
-        .filter(key => allowedFields.includes(key))
-        .reduce((obj, key) => {
-          obj[key] = updateData[key];
-          return obj;
-        }, {});
-
-      if (Object.keys(filteredData).length === 0) {
-        throw new ValidationError('No valid fields to update');
-      }
+     
 
       const service = await Service.findByIdAndUpdate(
         serviceId,
-        { $set: filteredData },
+        { $set: updateData },
         { new: true, runValidators: true }
       ).populate('subservices');
 

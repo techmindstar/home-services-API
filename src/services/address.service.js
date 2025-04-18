@@ -8,16 +8,10 @@ class AddressService {
     try {
       logger.info('Creating new address', { userId });
 
-      // Validate required fields
-      const requiredFields = ['street', 'city', 'state', 'pincode'];
-      const missingFields = requiredFields.filter(field => !addressData[field]);
-      
-      if (missingFields.length > 0) {
-        throw new ValidationError(`Missing required fields: ${missingFields.join(', ')}`);
-      }
+    
 
       // Set user reference
-      addressData.user = userId;
+      addressData.userId = userId;
 
       const address = await Address.create(addressData);
       logger.info('Address created successfully', { addressId: address._id, userId });
@@ -41,12 +35,12 @@ class AddressService {
       logger.info('Fetching all addresses', { userId, page, limit });
 
       const skip = (page - 1) * limit;
-      const addresses = await Address.find({ user: userId })
+      const addresses = await Address.find({ userId: userId })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
 
-      const total = await Address.countDocuments({ user: userId });
+      const total = await Address.countDocuments({ userId: userId });
 
       logger.info('Addresses fetched successfully', {
         count: addresses.length,
@@ -77,10 +71,10 @@ class AddressService {
   }
 
   async getAddress(addressId, userId) {
-    try {
+    try { 
       logger.info('Fetching address by ID', { addressId, userId });
 
-      const address = await Address.findOne({ _id: addressId, user: userId });
+      const address = await Address.findOne({ _id: addressId, userId: userId });
 
       if (!address) {
         logger.warn('Address not found', { addressId, userId });
@@ -108,22 +102,11 @@ class AddressService {
     try {
       logger.info('Updating address', { addressId, userId });
 
-      // Filter allowed fields
-      const allowedFields = ['street', 'city', 'state', 'pincode', 'isDefault'];
-      const filteredData = Object.keys(updateData)
-        .filter(key => allowedFields.includes(key))
-        .reduce((obj, key) => {
-          obj[key] = updateData[key];
-          return obj;
-        }, {});
-
-      if (Object.keys(filteredData).length === 0) {
-        throw new ValidationError('No valid fields to update');
-      }
+    
 
       const address = await Address.findOneAndUpdate(
-        { _id: addressId, user: userId },
-        { $set: filteredData },
+        { _id: addressId, userId: userId },
+        { $set: updateData },
         { new: true, runValidators: true }
       );
 
@@ -154,7 +137,7 @@ class AddressService {
     try {
       logger.info('Deleting address', { addressId, userId });
 
-      const address = await Address.findOneAndDelete({ _id: addressId, user: userId });
+      const address = await Address.findOneAndDelete({ _id: addressId, userId: userId });
 
       if (!address) {
         logger.warn('Address not found for deletion', { addressId, userId });
