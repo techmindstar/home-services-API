@@ -5,6 +5,7 @@ const SubserviceSchema = new mongoose.Schema({
     serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service", required: true }, // Linked to a service
     description: { type: String }, // Short description
     process: { type: String }, // Process details
+    image: { type: String },
     originalPrice: { type: Number, required: true }, // Before discount
     discountedPrice: { type: Number, required: true }, // After discount
     duration: { type: String, required: true }, // Duration of subservice

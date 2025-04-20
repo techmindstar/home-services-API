@@ -113,8 +113,7 @@ const deleteAdmin = async (req, res, next) => {
 const getAllUsers = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || appConfig.pagination.defaultLimit;
-
+    const limit = parseInt(req.query.limit) || 10 ;
     logger.info('Getting all users', { page, limit });
 
     const result = await adminService.getAllUsers(page, limit);
@@ -170,7 +169,7 @@ const deleteUser = async (req, res, next) => {
 
     await adminService.deleteUser(id);
 
-    res.status(204).json({
+    res.status(200).json({
       status: 'success',
       data: null
     });

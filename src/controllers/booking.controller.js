@@ -8,7 +8,7 @@ const bookingService = new BookingService();
 const getAllBookings = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || appConfig.pagination.defaultLimit;
+    const limit = parseInt(req.query.limit) || 10;
 
     logger.info('Getting all bookings', { page, limit });
 
@@ -45,8 +45,8 @@ const getBooking = async (req, res, next) => {
 const getUserBookings = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || appConfig.pagination.defaultLimit;
-    const userId = req.user._id;
+    const limit = parseInt(req.query.limit) || 10;
+    const userId = req.user.id;
 
     logger.info('Getting user bookings', { userId, page, limit });
 
@@ -66,7 +66,7 @@ const getUserBookings = async (req, res, next) => {
 const getUserBooking = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.user._id;
+    const userId = req.user.id;
     logger.info('Getting user booking', { userId, bookingId: id });
 
     const booking = await bookingService.getUserBooking(userId, id);
@@ -83,7 +83,7 @@ const getUserBooking = async (req, res, next) => {
 const createBooking = async (req, res, next) => {
   try {
     const bookingData = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id;
     logger.info('Creating new booking', { userId });
 
     const booking = await bookingService.createBooking(bookingData, userId);
@@ -101,7 +101,7 @@ const updateBooking = async (req, res, next) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id;
     const isAdmin = req.user.role === 'admin';
     logger.info('Updating booking', { bookingId: id, userId, isAdmin });
 
@@ -119,13 +119,13 @@ const updateBooking = async (req, res, next) => {
 const deleteBooking = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.user._id;
+    const userId = req.user.id;
     const isAdmin = req.user.role === 'admin';
     logger.info('Deleting booking', { bookingId: id, userId, isAdmin });
 
     await bookingService.deleteBooking(id, userId, isAdmin);
 
-    res.status(204).json({
+    res.status(200).json({
       status: 'success',
       data: null
     });
@@ -138,7 +138,8 @@ const rescheduleBooking = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { newDate, newTime } = req.body;
-    const userId = req.user._id;
+    console.log(newDate, newTime);
+    const userId = req.user.id;
     logger.info('Rescheduling booking', { bookingId: id, userId });
 
     const booking = await bookingService.rescheduleBooking(id, newDate, newTime, userId);
@@ -156,7 +157,7 @@ const cancelBooking = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id;
     logger.info('Cancelling booking', { bookingId: id, userId });
 
     const booking = await bookingService.cancelBooking(id, userId, reason);

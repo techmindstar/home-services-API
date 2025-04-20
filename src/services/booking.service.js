@@ -14,8 +14,8 @@ class BookingService {
 
       const skip = (page - 1) * limit;
       const bookings = await Booking.find()
-        .populate('serviceId', 'name description')
-        .populate('subserviceId', 'name description price')
+        .populate('services', 'name description')
+        .populate('subservices', 'name description price')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -53,8 +53,8 @@ class BookingService {
       logger.info('Admin: Fetching booking by ID', { bookingId });
 
       const booking = await Booking.findById(bookingId)
-        .populate('serviceId', 'name description')
-        .populate('subserviceId', 'name description price');
+        .populate('services', 'name description')
+        .populate('subservices', 'name description price');
 
       if (!booking) {
         logger.warn('Booking not found', { bookingId });
@@ -84,8 +84,8 @@ class BookingService {
 
       const skip = (page - 1) * limit;
       const bookings = await Booking.find({ userId })
-        .populate('serviceId', 'name description')
-        .populate('subserviceId', 'name description price')
+        .populate('services', 'name description')
+        .populate('subservices', 'name description price')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -125,8 +125,8 @@ class BookingService {
       logger.info('User: Fetching user booking', { userId, bookingId });
 
       const booking = await Booking.findOne({ _id: bookingId, userId })
-        .populate('serviceId', 'name description')
-        .populate('subserviceId', 'name description price');
+        .populate('services', 'name description')
+        .populate('subservices', 'name description price');
 
       if (!booking) {
         logger.warn('Booking not found or unauthorized', { userId, bookingId });
@@ -153,50 +153,53 @@ class BookingService {
   async createBooking(bookingData, userId) {
     try {
       logger.info('User: Creating new booking', { userId });
-
-      // Validate required fields
-      const requiredFields = [
-        'serviceId', 'subserviceId', 'customerName', 'customerEmail',
-        'customerPhone', 'bookingDate', 'bookingTime', 'address'
-      ];
-      const missingFields = requiredFields.filter(field => !bookingData[field]);
-      
-      if (missingFields.length > 0) {
-        throw new ValidationError(`Missing required fields: ${missingFields.join(', ')}`);
+  
+      // Validate all service IDs
+      if (!Array.isArray(bookingData.services) || bookingData.services.length === 0) {
+        throw new ValidationError('At least one service must be provided');
       }
-
-      // Check if service exists
-      const service = await Service.findById(bookingData.serviceId);
-      if (!service) {
-        throw new NotFoundError('Service not found');
+  
+      const foundServices = await Service.find({ _id: { $in: bookingData.services } });
+      if (foundServices.length !== bookingData.services.length) {
+        throw new NotFoundError('One or more services not found');
       }
-
-      // Check if subservice exists
-      const subservice = await Subservice.findById(bookingData.subserviceId);
-      if (!subservice) {
-        throw new NotFoundError('Subservice not found');
+  
+      // Validate all subservice IDs
+      if (!Array.isArray(bookingData.subservices) || bookingData.subservices.length === 0) {
+        throw new ValidationError('At least one subservice must be provided');
       }
-
-      // Set initial status and user ID
-      bookingData.status = 'pending';
+  
+      const foundSubservices = await Subservice.find({ _id: { $in: bookingData.subservices } });
+      if (foundSubservices.length !== bookingData.subservices.length) {
+        throw new NotFoundError('One or more subservices not found');
+      }
+  
+      // Set additional booking fields
       bookingData.userId = userId;
-
+      bookingData.status = 'pending';
+  
       const booking = await Booking.create(bookingData);
-      logger.info('User: Booking created successfully', { bookingId: booking._id, userId });
+  
+      logger.info('User: Booking created successfully', {
+        bookingId: booking._id,
+        userId
+      });
+  
       return booking;
     } catch (error) {
       logger.error('Error creating booking', {
         error: error.message,
         userId
       });
-
+  
       if (error instanceof ValidationError || error instanceof NotFoundError) {
         throw error;
       }
-
+  
       throw new DatabaseError('Failed to create booking');
     }
   }
+  
 
   async updateBooking(bookingId, updateData, userId, isAdmin = false) {
     try {
@@ -213,28 +216,13 @@ class BookingService {
       }
 
       // Filter allowed fields based on user role
-      const allowedFields = isAdmin 
-        ? ['customerName', 'customerEmail', 'customerPhone', 'bookingDate', 
-           'bookingTime', 'address', 'status', 'serviceId', 'subserviceId']
-        : ['customerName', 'customerEmail', 'customerPhone', 'address'];
       
-      const filteredData = Object.keys(updateData)
-        .filter(key => allowedFields.includes(key))
-        .reduce((obj, key) => {
-          obj[key] = updateData[key];
-          return obj;
-        }, {});
-
-      if (Object.keys(filteredData).length === 0) {
-        throw new ValidationError('No valid fields to update');
-      }
-
       const booking = await Booking.findByIdAndUpdate(
         bookingId,
-        { $set: filteredData },
+        { $set: updateData },
         { new: true, runValidators: true }
-      ).populate('serviceId', 'name description')
-       .populate('subserviceId', 'name description price');
+      ).populate('services', 'name description')
+       .populate('subservices', 'name description price');
 
       logger.info('User: Booking updated successfully', { bookingId, userId });
       return booking;
@@ -309,23 +297,22 @@ class BookingService {
       if (newBookingDateTime < new Date()) {
         throw new ValidationError('Cannot reschedule to a past date and time');
       }
-
+console.log(newDate, newTime)
       const booking = await Booking.findByIdAndUpdate(
         bookingId,
         { 
           $set: { 
-            bookingDate: newDate,
-            bookingTime: newTime,
-            status: 'rescheduled'
+            date: newDate,
+            time: newTime,
           }
         },
         { new: true, runValidators: true }
-      ).populate('serviceId', 'name description')
-       .populate('subserviceId', 'name description price');
+      ).populate('services', 'name description')
+       .populate('subservices', 'name description price');
 
-      // Send SMS notification for rescheduling
-      const message = `Your booking for ${booking.serviceId.name} has been rescheduled to ${newDate} at ${newTime}.`;
-      await sendSms(booking.customerPhone, message);
+      // // Send SMS notification for rescheduling
+      // const message = `Your booking for ${booking.serviceId.name} has been rescheduled to ${newDate} at ${newTime}.`;
+      // await sendSms(booking.customerPhone, message);
 
       logger.info('User: Booking rescheduled successfully', { bookingId, userId });
       return booking;
@@ -377,12 +364,12 @@ class BookingService {
           }
         },
         { new: true, runValidators: true }
-      ).populate('serviceId', 'name description')
-       .populate('subserviceId', 'name description price');
+      ).populate('services', 'name description')
+       .populate('subservices', 'name description price');
 
       // Send SMS notification for cancellation
-      const message = `Your booking for ${booking.serviceId.name} has been cancelled. Reason: ${reason || 'Not provided'}`;
-      await sendSms(booking.customerPhone, message);
+      // const message = `Your booking for ${booking.serviceId.name} has been cancelled. Reason: ${reason || 'Not provided'}`;
+      // await sendSms(booking.customerPhone, message);
 
       logger.info('User: Booking cancelled successfully', { bookingId, userId });
       return booking;
@@ -406,9 +393,9 @@ class BookingService {
     try {
       logger.info('Admin: Fetching bookings by service', { serviceId });
 
-      const bookings = await Booking.find({ serviceId })
-        .populate('subserviceId', 'name description price')
-        .sort({ createdAt: -1 });
+      const bookings = await Booking.find({ services: serviceId })
+  .populate('services', 'name description originalPrice discountedPrice')
+  .sort({ createdAt: -1 });
 
       logger.info('Admin: Bookings fetched successfully', {
         count: bookings.length,
@@ -429,9 +416,10 @@ class BookingService {
     try {
       logger.info('Admin: Fetching bookings by subservice', { subserviceId });
 
-      const bookings = await Booking.find({ subserviceId })
-        .populate('serviceId', 'name description')
-        .sort({ createdAt: -1 });
+      const bookings = await Booking.find({ subservices: subserviceId })
+      .populate('subservices', 'name description originalPrice discountedPrice')
+      .sort({ createdAt: -1 });
+    
 
       logger.info('Admin: Bookings fetched successfully', {
         count: bookings.length,

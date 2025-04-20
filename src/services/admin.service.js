@@ -242,13 +242,13 @@ class AdminService {
       logger.info('Fetching all users', { page, limit });
 
       const skip = (page - 1) * limit;
-      const users = await User.find({ role: 'user' })
+      const users = await User.find({ role: 'client' })
         .select('-password')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
 
-      const total = await User.countDocuments({ role: 'user' });
+      const total = await User.countDocuments({ role: 'client' });
 
       logger.info('Users fetched successfully', {
         count: users.length,
@@ -280,7 +280,7 @@ class AdminService {
     try {
       logger.info('Fetching user by ID', { userId });
 
-      const user = await User.findOne({ _id: userId, role: 'user' })
+      const user = await User.findOne({ _id: userId, role: 'client' })
         .select('-password');
 
       if (!user) {
@@ -322,7 +322,7 @@ class AdminService {
       }
 
       const user = await User.findOneAndUpdate(
-        { _id: userId, role: 'user' },
+        { _id: userId, role: 'client' },
         { $set: filteredData },
         { new: true, runValidators: true }
       ).select('-password');
@@ -353,7 +353,7 @@ class AdminService {
     try {
       logger.info('Deleting user', { userId });
 
-      const user = await User.findOneAndDelete({ _id: userId, role: 'user' });
+      const user = await User.findOneAndDelete({ _id: userId, role: 'client' });
 
       if (!user) {
         logger.warn('User not found for deletion', { userId });

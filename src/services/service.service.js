@@ -75,14 +75,7 @@ class ServiceService {
     try {
       logger.info('Creating new service', { serviceData });
 
-      // Validate required fields
-      const requiredFields = ['name', 'originalPrice', 'discountedPrice', 'duration'];
-      const missingFields = requiredFields.filter(field => !serviceData[field]);
-      
-      if (missingFields.length > 0) {
-        throw new ValidationError(`Missing required fields: ${missingFields.join(', ')}`);
-      }
-
+    
       const service = await Service.create(serviceData);
       logger.info('Service created successfully', { serviceId: service._id });
       return service;
