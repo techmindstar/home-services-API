@@ -15,7 +15,7 @@ class BookingService {
       const skip = (page - 1) * limit;
       const bookings = await Booking.find()
         .populate('services', 'name description')
-        .populate('subservices', 'name description price')
+        .populate('subservices', 'name description price').populate('addressId').populate('addressId')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -54,7 +54,7 @@ class BookingService {
 
       const booking = await Booking.findById(bookingId)
         .populate('services', 'name description')
-        .populate('subservices', 'name description price');
+        .populate('subservices', 'name description price').populate('addressId').populate('addressId');
 
       if (!booking) {
         logger.warn('Booking not found', { bookingId });
@@ -85,7 +85,7 @@ class BookingService {
       const skip = (page - 1) * limit;
       const bookings = await Booking.find({ userId })
         .populate('services', 'name description')
-        .populate('subservices', 'name description price')
+        .populate('subservices', 'name description price').populate('addressId').populate('addressId')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -126,7 +126,7 @@ class BookingService {
 
       const booking = await Booking.findOne({ _id: bookingId, userId })
         .populate('services', 'name description')
-        .populate('subservices', 'name description price');
+        .populate('subservices', 'name description price').populate('addressId');
 
       if (!booking) {
         logger.warn('Booking not found or unauthorized', { userId, bookingId });
@@ -222,7 +222,7 @@ class BookingService {
         { $set: updateData },
         { new: true, runValidators: true }
       ).populate('services', 'name description')
-       .populate('subservices', 'name description price');
+       .populate('subservices', 'name description price').populate('addressId');
 
       logger.info('User: Booking updated successfully', { bookingId, userId });
       return booking;
@@ -308,7 +308,7 @@ console.log(newDate, newTime)
         },
         { new: true, runValidators: true }
       ).populate('services', 'name description')
-       .populate('subservices', 'name description price');
+       .populate('subservices', 'name description price').populate('addressId');
 
       // // Send SMS notification for rescheduling
       // const message = `Your booking for ${booking.serviceId.name} has been rescheduled to ${newDate} at ${newTime}.`;
@@ -365,7 +365,7 @@ console.log(newDate, newTime)
         },
         { new: true, runValidators: true }
       ).populate('services', 'name description')
-       .populate('subservices', 'name description price');
+       .populate('subservices', 'name description price').populate('addressId');
 
       // Send SMS notification for cancellation
       // const message = `Your booking for ${booking.serviceId.name} has been cancelled. Reason: ${reason || 'Not provided'}`;

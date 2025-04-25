@@ -4,6 +4,7 @@ const BookingSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   services: [{ type: mongoose.Schema.Types.ObjectId, ref: "Service" }], // Multiple services
   subservices: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subservice" }], // Multiple subservices
+  addressId: { type: mongoose.Schema.Types.ObjectId, ref: "Address", required: true }, // <--- reference here
   date: { type: Date, required: true },
   time: { type: String, required: true },
   status: { 
