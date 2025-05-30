@@ -3,8 +3,8 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user.model.js");
 const appConfig = require("../config/app.config");
 const { generateOTP } = require('../utils/generateOtp.util.js'); // Import OTP generator
-const { sendSms } = require('../utils/twilio.util.js'); // Import Twilio SMS utility
-const Otp = require('../models/otp.model.js'); // Your OTP model
+const { sendOtp, verifyOtp } = require('../utils/twilio.util');
+// const { generateToken } = require('../utils/twilio.util');
 const { logger } = require("../utils/logger.util");
 const { NotFoundError, DatabaseError, ValidationError, AuthenticationError } = require("../utils/error.util");
 
@@ -18,125 +18,113 @@ const OTP_EXPIRY = parseInt(appConfig.otp_expiry); // Convert to number
 
 class AuthService {
 
-  async generateAndSendOtp(userDetails){
+  async generateAndSendOtp(userDetails) {
     try {
-      const { phoneNumber } = userDetails;
-      logger.info('Generating OTP', { phoneNumber });
-  
-      if (!phoneNumber) {
-        logger.warn('Missing phone number');
-        throw new ValidationError("Phone number is required.");
-      }
-  
-      const recentOtpRequest = await Otp.findOne({ phoneNumber }).sort({ createdAt: -1 });
-      if (recentOtpRequest && (Date.now() - new Date(recentOtpRequest.createdAt)) < 60000) {
-        logger.warn('Too many OTP requests', { phoneNumber });
-        throw new ValidationError("Too many OTP requests. Please try again later.");
-      }
-  
-      let user = await User.findOne({ phoneNumber });
-      if (!user) {
-        logger.info('Creating new user', { phoneNumber });
-        user = new User({ phoneNumber });
-        await user.save();
-      }
-  
-      const otp = generateOTP();
-      const expiresAt = new Date(Date.now() + OTP_EXPIRY);
-  
-      await Otp.findOneAndDelete({ phoneNumber });
-      const newOtp = await new Otp({ phoneNumber, otp, expiresAt }).save();
+      // Extract phone number from the object
+      console.log(userDetails);
+      const phoneNumber = userDetails.phoneNumber;
       
-      logger.info('OTP generated', {
-        phoneNumber,
-        otpId: newOtp._id,
-        expiresAt: newOtp.expiresAt
+      if (!phoneNumber) {
+        throw new ValidationError('Phone number is required');
+      }
+
+      // Clean the phone number (remove non-digits)
+      const cleanedPhoneNumber = String(phoneNumber).replace(/\D/g, '');
+      
+      if (cleanedPhoneNumber.length !== 10) {
+        throw new ValidationError('Phone number must be 10 digits');
+      }
+      console.log(cleanedPhoneNumber);
+      // Check if user exists - pass the cleaned phone number directly
+      const user = await User.findOne({ phoneNumber: cleanedPhoneNumber });
+      if (!user) {
+        throw new ValidationError('User not found');
+      }
+
+      // Send OTP via Twilio Verify
+      await sendOtp(cleanedPhoneNumber);
+
+      logger.info('OTP sent successfully', {
+        phoneNumber: cleanedPhoneNumber
       });
-  
-      const message = `Your OTP is ${otp}. Valid for 5 minutes.`;
-      await sendSms(phoneNumber, message);
-  
-      logger.info('OTP sent successfully', { phoneNumber });
-      return { message: "OTP sent successfully" };
+
+      return { message: 'OTP sent successfully' };
     } catch (error) {
-      logger.error('Error generating OTP', {
+      logger.error('Failed to send OTP', {
         error: error.message,
-        phoneNumber: userDetails.phoneNumber
+        phoneNumber: userDetails?.phoneNumber
       });
-  
+
       if (error instanceof ValidationError) {
         throw error;
       }
-  
-      throw new DatabaseError('Failed to generate and send OTP');
+
+      throw new DatabaseError('Failed to send OTP');
     }
-  };
-  
-  async verifyOtp (phoneNumber, otp){
+  }
+
+  async verifyOtp(userDetails) {
     try {
-      logger.info('Verifying OTP', { phoneNumber });
+      // Extract phone number and OTP from the object
+      const { phoneNumber, otp } = userDetails;
+
+      if (!phoneNumber || !otp) {
+        throw new ValidationError('Phone number and OTP are required');
+      }
+
+      // Clean the phone number (remove non-digits)
+      const cleanedPhoneNumber = String(phoneNumber).replace(/\D/g, '');
       
-      const otpRecord = await Otp.findOne({ phoneNumber });
-      if (!otpRecord) {
-        logger.warn('OTP not found', { phoneNumber });
-        throw new ValidationError("OTP not found.");
+      if (cleanedPhoneNumber.length !== 10) {
+        throw new ValidationError('Phone number must be 10 digits');
       }
-  
-      // Check if OTP has expired
-      const now = new Date();
-      const expiryDate = new Date(otpRecord.expiresAt);
-      if (now > expiryDate) {
-        logger.warn('OTP expired', { phoneNumber });
-        throw new ValidationError("OTP has expired.");
+
+      // Verify OTP with Twilio
+      const isValid = await verifyOtp(cleanedPhoneNumber, otp);
+      if (!isValid) {
+        throw new ValidationError('Invalid OTP');
       }
-  
-      // Convert both OTPs to strings for comparison
-      const receivedOtp = String(otp);
-      const storedOtp = String(otpRecord.otp);
-      
-      if (receivedOtp !== storedOtp) {
-        logger.warn('Invalid OTP', { phoneNumber });
-        throw new ValidationError("Invalid OTP.");
-      }
-  
-      // OTP is valid, find or create the user
-      let user = await User.findOne({ phoneNumber });
+
+      // Get user - pass the cleaned phone number directly
+      const user = await User.findOne({ phoneNumber: cleanedPhoneNumber });
       if (!user) {
-        logger.info('Creating new user', { phoneNumber });
-        user = new User({ phoneNumber });
-        await user.save();
+        throw new ValidationError('User not found');
       }
-  
+
+      // Generate JWT token
       const token = jwt.sign(
         { id: user._id, phoneNumber: user.phoneNumber },
         JWT_SECRET,
       );
-  
-      // Delete the used OTP
-      await Otp.deleteOne({ _id: otpRecord._id });
-  
-      logger.info('OTP verified successfully', { userId: user._id });
+
+      logger.info('OTP verified successfully', {
+        phoneNumber: cleanedPhoneNumber,
+        userId: user._id
+      });
+
       return {
-        token,
+        message: 'OTP verified successfully',
         user: {
           id: user._id,
           name: user.name,
-          email: user.email,
+          phoneNumber: user.phoneNumber,
+          email: user.email
         },
+        token
       };
     } catch (error) {
-      logger.error('Error verifying OTP', {
+      logger.error('Failed to verify OTP', {
         error: error.message,
-        phoneNumber
+        phoneNumber: userDetails?.phoneNumber
       });
-  
+
       if (error instanceof ValidationError) {
         throw error;
       }
-  
+
       throw new DatabaseError('Failed to verify OTP');
     }
-  };
+  }
 }
 
 module.exports = AuthService;

@@ -7,20 +7,19 @@ const authService = new AuthService();
 
 const generateAndSendOtp = async (req, res) => {
   try {
-    logger.info('OTP generation request', { phoneNumber: req.body.phoneNumber });
+    // Extract phone number from request body
+    const phoneNumber = req.body.phoneNumber;
+    logger.info('OTP generation request', { phoneNumber });
     
-    const result = await authService.generateAndSendOtp(req.body);
-
-    if (!result) {
-      logger.warn('OTP generation failed', { phoneNumber: req.body.phoneNumber });
-      return res.status(400).json({ message: "Registration failed" });
+    if (!phoneNumber) {
+      return res.status(400).json({ message: "Phone number is required" });
     }
 
-    logger.info('OTP generated successfully', { phoneNumber: req.body.phoneNumber });
-    res.status(201).json({
-      message: "User registered successfully",
-      user: result
-    });
+    // Pass the phone number directly, not as an object
+    const result = await authService.generateAndSendOtp({ phoneNumber: String(phoneNumber) });
+
+    logger.info('OTP sent successfully', { phoneNumber });
+    res.status(200).json(result);
   } catch (error) {
     logger.error("Register Controller Error:", {
       error: error.message,
@@ -51,25 +50,14 @@ const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "Phone number and OTP are required" });
     }
 
-    // Call the service to verify OTP and get user + token
-    const { user, token } = await authService.verifyOtp(phoneNumber, otp);
-  
-    // Return user and JWT token
-    if (!user) {
-      logger.warn('User not found', { phoneNumber });
-      return res.status(400).json({ message: "User not found" });
-    }
-    if (!token) {
-      logger.warn('Token generation failed', { phoneNumber });
-      return res.status(400).json({ message: "Token generation failed" });
-    }
-
-    logger.info('OTP verified successfully', { userId: user.id });
-    return res.status(200).json({
-      message: "OTP verified successfully",
-      user,  // User data
-      token  // JWT Token
+    // Pass the phone number directly, not as an object
+    const result = await authService.verifyOtp({ 
+      phoneNumber: String(phoneNumber),
+      otp: String(otp)
     });
+
+    logger.info('OTP verified successfully', { phoneNumber });
+    return res.status(200).json(result);
 
   } catch (error) {
     logger.error("Verify OTP Controller Error:", {
@@ -85,8 +73,8 @@ const verifyOtp = async (req, res) => {
       return res.status(500).json({ message: "Internal server error" });
     }
 
-    return res.status(400).json({
-      message: error.message || "OTP verification failed",
+    return res.status(500).json({
+      message: error.message || "OTP verification failed"
     });
   }
 };
