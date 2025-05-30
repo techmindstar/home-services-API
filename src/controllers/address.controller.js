@@ -9,13 +9,13 @@ const createAddress = async (req, res, next) => {
   try {
     const addressData = req.body;
     const userId = req.user.id;
-    logger.info('Creating new address', { userId });
+    logger.info("Creating new address", { userId });
 
     const address = await addressService.createAddress(addressData, userId);
 
     res.status(201).json({
-      status: 'success',
-      data: { address }
+      status: "success",
+      data: { address },
     });
   } catch (error) {
     next(error);
@@ -29,15 +29,15 @@ const getAllAddresses = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
 
-    logger.info('Getting all addresses', { userId, page, limit });
+    logger.info("Getting all addresses", { userId, page, limit });
 
     const result = await addressService.getAllAddresses(userId, page, limit);
 
     res.status(200).json({
-      status: 'success',
+      status: "success",
       results: result.addresses.length,
       pagination: result.pagination,
-      data: { addresses: result.addresses }
+      data: { addresses: result.addresses },
     });
   } catch (error) {
     next(error);
@@ -49,13 +49,30 @@ const getAddress = async (req, res, next) => {
   try {
     const { addressId } = req.params;
     const userId = req.user.id;
-    logger.info('Getting address by ID', { addressId: addressId, userId });
+    logger.info("Getting address by ID", { addressId: addressId, userId });
 
     const address = await addressService.getAddress(addressId, userId);
 
     res.status(200).json({
-      status: 'success',
-      data: { address }
+      status: "success",
+      data: { address },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get single  address for admin
+const getAddressForAdmin = async (req, res, next) => {
+  try {
+    const { addressId } = req.params;
+    logger.info("Getting address by ID", { addressId: addressId });
+
+    const address = await addressService.getAddressForAdmin(addressId);
+
+    res.status(200).json({
+      status: "success",
+      data: { address },
     });
   } catch (error) {
     next(error);
@@ -68,13 +85,17 @@ const updateAddress = async (req, res, next) => {
     const { addressId } = req.params;
     const userId = req.user.id;
     const updateData = req.body;
-    logger.info('Updating address', { addressId: addressId, userId });
+    logger.info("Updating address", { addressId: addressId, userId });
 
-    const address = await addressService.updateAddress(addressId, userId, updateData);
+    const address = await addressService.updateAddress(
+      addressId,
+      userId,
+      updateData
+    );
 
     res.status(200).json({
-      status: 'success',
-      data: { address }
+      status: "success",
+      data: { address },
     });
   } catch (error) {
     next(error);
@@ -86,13 +107,13 @@ const deleteAddress = async (req, res, next) => {
   try {
     const { addressId } = req.params;
     const userId = req.user.id;
-    logger.info('Deleting address', { addressId: addressId, userId });
+    logger.info("Deleting address", { addressId: addressId, userId });
 
-   const response = await addressService.deleteAddress(addressId, userId);
+    const response = await addressService.deleteAddress(addressId, userId);
 
     res.status(200).json({
-      status: 'success',
-      data: response
+      status: "success",
+      data: response,
     });
   } catch (error) {
     next(error);
@@ -103,6 +124,7 @@ module.exports = {
   createAddress,
   getAllAddresses,
   getAddress,
+  getAddressForAdmin,
   updateAddress,
-  deleteAddress
-}; 
+  deleteAddress,
+};
