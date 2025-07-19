@@ -40,19 +40,6 @@ class AuthService {
       // 2. Find existing user
       const user = await User.findOne({ phoneNumber: cleanedPhoneNumber });
 
-      if (!user) {
-        user = await new User({
-          phoneNumber: cleanedPhoneNumber,
-          addresses: [],
-          password:'Not Required',
-          role: "client",
-        }).save();
-
-        logger.info("New user created", {
-          phoneNumber: cleanedPhoneNumber,
-          userId: user._id,
-        });
-      }
       // 3. Generate OTP and construct message
       const otp = generateOTP(); // implement this function separately
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
@@ -64,7 +51,7 @@ class AuthService {
         password: "rm5d2",
         unicode: "false",
         from: "SREN",
-        to: `91${cleanedPhoneNumber}`, // Use correct Indian phone format
+        to: `${cleanedPhoneNumber}`, // Use correct Indian phone format
         text: message,
         dltContentId: "1707175247294315575",
       });
@@ -97,6 +84,21 @@ class AuthService {
 
       const responseData = await response.json();
       logger.info("OTP API response received", { responseData });
+
+      // 6. Create new user if doesn't exists
+      if (!user) {
+         const newUser = await new User({
+          phoneNumber: cleanedPhoneNumber,
+          addresses: [],
+          password: "Not Required",
+          role: "client",
+        }).save();
+
+        logger.info("New user created", {
+          phoneNumber: cleanedPhoneNumber,
+          userId: newUser._id,
+        });
+      }
 
       return { message: "OTP sent successfully" };
     } catch (error) {
@@ -154,7 +156,7 @@ class AuthService {
       let user = await User.findOne({ phoneNumber: cleanedPhoneNumber });
 
       if (!user) {
-        throw new ValidationError('User not found')
+        throw new ValidationError("User not found");
       }
 
       // 5. Generate JWT token
