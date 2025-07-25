@@ -1,4 +1,4 @@
-const generateOTP = (length = 6) => {
+const generateOTP = (length = 4) => {
     const chars = '0123456789'; // Numeric OTP
     let otp = '';
     
