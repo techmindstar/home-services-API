@@ -4,15 +4,17 @@ const { logger } = require('../utils/logger.util');
 const { ValidationError } = require('../utils/error.util');
 const { S3Client, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-
+const appConfig = require("../config/app.config");
 // Configure AWS
 const s3 = new S3Client({
   region: 'eu-west-2',
   credentials: {
-    accessKeyId: 'AKIAQQPZ25NFJERWDJFN',
-    secretAccessKey: '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',
+    accessKeyId: appConfig.access_key,
+    secretAccessKey: appConfig.secret_access_key,
   }
 });
+
+
 
 // Configure multer for S3 upload
 const upload = multer({

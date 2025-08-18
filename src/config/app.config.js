@@ -10,5 +10,7 @@ module.exports = {
   twilio_phone_number:process.env.TWILIO_PHONE_NUMBER,
   twilio_service_sid:process.env.TWILIO_SERVICE_SID,
   otp_expiry:process.env.OTP_EXPIRY,  
+  access_key: process.env.ACCESS_KEY,
+  secret_access_key: process.env.SECRET_ACCESS_KEY,
 };
 
