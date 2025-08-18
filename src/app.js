@@ -16,6 +16,8 @@ const serviceRoutes = require('./routes/service.route.js');
 const adminRoutes = require('./routes/admin.route');
 const subserviceRoutes = require('./routes/subservice.route.js');
 const bookingRoutes = require('./routes/booking.route.js');
+const ratingRoutes = require('./routes/rating.route.js');
+const serviceProviderRoutes = require('./routes/serviceProvider.route.js');
 
 // Load environment variables
 dotenv.config();
@@ -71,6 +73,8 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/subservice', subserviceRoutes);
 app.use('/api/booking', bookingRoutes);
+app.use('/api/ratings', ratingRoutes);
+app.use('/api/service-providers', serviceProviderRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

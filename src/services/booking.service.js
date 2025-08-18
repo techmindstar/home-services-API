@@ -15,7 +15,10 @@ class BookingService {
       const skip = (page - 1) * limit;
       const bookings = await Booking.find()
         .populate('services', 'name description')
-        .populate('subservices', 'name description price').populate('addressId').populate('addressId')
+        .populate('subservices', 'name description price')
+        .populate('addressId')
+        .populate('serviceProviderId', 'name email phoneNumber rating')
+        .populate('assignedBy', 'name')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -54,7 +57,10 @@ class BookingService {
 
       const booking = await Booking.findById(bookingId)
         .populate('services', 'name description')
-        .populate('subservices', 'name description price').populate('addressId').populate('addressId');
+        .populate('subservices', 'name description price')
+        .populate('addressId')
+        .populate('serviceProviderId', 'name email phoneNumber rating')
+        .populate('assignedBy', 'name');
 
       if (!booking) {
         logger.warn('Booking not found', { bookingId });
@@ -85,7 +91,10 @@ class BookingService {
       const skip = (page - 1) * limit;
       const bookings = await Booking.find({ userId })
         .populate('services', 'name description')
-        .populate('subservices', 'name description price').populate('addressId').populate('addressId')
+        .populate('subservices', 'name description price')
+        .populate('addressId')
+        .populate('serviceProviderId', 'name email phoneNumber rating')
+        .populate('assignedBy', 'name')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -126,7 +135,10 @@ class BookingService {
 
       const booking = await Booking.findOne({ _id: bookingId, userId })
         .populate('services', 'name description')
-        .populate('subservices', 'name description price').populate('addressId');
+        .populate('subservices', 'name description price')
+        .populate('addressId')
+        .populate('serviceProviderId', 'name email phoneNumber rating')
+        .populate('assignedBy', 'name');
 
       if (!booking) {
         logger.warn('Booking not found or unauthorized', { userId, bookingId });
@@ -223,6 +235,11 @@ class BookingService {
         { new: true, runValidators: true }
       ).populate('services', 'name description')
        .populate('subservices', 'name description price').populate('addressId');
+
+      // Check if status was changed to 'completed' - user can now provide rating
+      if (updateData.status === 'completed' && existingBooking.status !== 'completed') {
+        logger.info('Booking marked as completed - user can now provide rating', { bookingId });
+      }
 
       logger.info('User: Booking updated successfully', { bookingId, userId });
       return booking;

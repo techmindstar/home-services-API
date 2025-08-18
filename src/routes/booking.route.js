@@ -27,5 +27,6 @@ router.get(
   "/subservice/:subserviceId",
   bookingController.getBookingsBySubservice
 );
+router.put("/:bookingId/assign-provider", bookingController.assignServiceProvider);
 
 module.exports = router;

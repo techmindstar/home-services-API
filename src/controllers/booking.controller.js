@@ -1,8 +1,11 @@
 const BookingService = require("../services/booking.service");
+const ServiceProviderService = require("../services/serviceProvider.service");
 const { logger } = require("../utils/logger.util");
+const { ValidationError, NotFoundError } = require("../utils/error.util");
 const appConfig = require("../config/app.config");
 
 const bookingService = new BookingService();
+const serviceProviderService = new ServiceProviderService();
 
 // Admin routes
 const getAllBookings = async (req, res, next) => {
@@ -205,6 +208,71 @@ const getBookingsBySubservice = async (req, res, next) => {
   }
 };
 
+// Assign service provider to booking (Admin only)
+const assignServiceProvider = async (req, res, next) => {
+  try {
+    const { bookingId } = req.params;
+    const { providerId } = req.body;
+    const adminId = req.user.id;
+    
+    logger.info('Assigning service provider to booking', { 
+      bookingId, 
+      providerId, 
+      adminId 
+    });
+
+    if (!providerId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Service provider ID is required'
+      });
+    }
+
+    const booking = await serviceProviderService.assignToBooking(providerId, bookingId, adminId);
+    
+    logger.info('Service provider assigned to booking successfully', { 
+      bookingId, 
+      providerId 
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Service provider assigned to booking successfully',
+      data: {
+        booking: {
+          id: booking._id,
+          serviceProviderId: booking.serviceProviderId,
+          assignedAt: booking.assignedAt,
+          assignedBy: booking.assignedBy,
+          status: booking.status
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to assign service provider to booking', {
+      error: error.message,
+      bookingId: req.params.bookingId,
+      adminId: req.user.id
+    });
+
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    if (error instanceof NotFoundError) {
+      return res.status(404).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    next(error);
+  }
+};
+
 module.exports = {
   // Admin routes
   getAllBookings,
@@ -219,5 +287,7 @@ module.exports = {
   cancelBooking,
   // Public routes
   getBookingsByService,
-  getBookingsBySubservice
+  getBookingsBySubservice,
+  // Admin assignment
+  assignServiceProvider
 }; 
