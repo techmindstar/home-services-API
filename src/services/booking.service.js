@@ -1,4 +1,5 @@
 const Booking = require("../models/booking.model");
+const Rating = require("../models/rating.model");
 const Service = require("../models/service.model");
 const Subservice = require("../models/subservice.model");
 const { logger } = require("../utils/logger.util");
@@ -97,7 +98,24 @@ class BookingService {
         .populate('assignedBy', 'name')
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(limit);
+        .limit(limit)
+        .lean();
+        
+
+        const bookingIds = bookings.map(b => b._id);
+
+// Step 2: fetch ratings for these bookings
+const ratings = await Rating.find({ booking: { $in: bookingIds } })
+  .select('booking rating feedback')
+  .lean();
+
+// Step 3: build a map for fast lookup
+const ratingsMap = new Map(ratings.map(r => [r.booking.toString(), r]));
+
+// Step 4: attach ratings to corresponding bookings
+for (const booking of bookings) {
+  booking.rating = ratingsMap.get(booking._id.toString()) || null;
+}
 
       const total = await Booking.countDocuments({ userId });
 
