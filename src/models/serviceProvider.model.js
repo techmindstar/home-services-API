@@ -40,27 +40,20 @@ const ServiceProviderSchema = new mongoose.Schema({
   
   // Address
   address: {
-    street: { type: String,  },
-    city: { type: String,  },
-    state: { type: String,  },
-    pincode: { type: String, },
-    country: { type: String, default: 'India' }
+   type: String,
   },
   
   // Identity Documents
   aadhaarCard: {
     number: {
       type: String,
-      required: true,
       unique: true,
     },
     image: {
       type: String, // S3 bucket URL
-      required: true
     },
     s3Key: {
       type: String, // S3 object key for file management
-      required: true
     },
     verified: {
       type: Boolean,
@@ -70,16 +63,13 @@ const ServiceProviderSchema = new mongoose.Schema({
   panCard: {
     number: {
       type: String,
-      required: true,
       unique: true,
     },
     image: {
       type: String, // S3 bucket URL
-      required: true
     },
     s3Key: {
       type: String, // S3 object key for file management
-      required: true
     },
     verified: {
       type: Boolean,
@@ -88,11 +78,10 @@ const ServiceProviderSchema = new mongoose.Schema({
   },
   passportPhoto: {
     type: String, // S3 bucket URL
-    required: true
   },
   passportPhotoS3Key: {
     type: String, // S3 object key for file management
-    required: true
+
   },
   
   // Professional Information

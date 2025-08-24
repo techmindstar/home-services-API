@@ -24,17 +24,20 @@ class ServiceProviderService {
       }
 
       // Check if Aadhaar number already exists
+      if(providerData.aadhaarCard){
       const existingAadhaar = await ServiceProvider.findOne({ 'aadhaarCard.number': providerData.aadhaarCard.number });
       if (existingAadhaar) {
         throw new ConflictError('Aadhaar number already registered');
       }
+    }
 
       // Check if PAN number already exists
+      if(providerData.panCard){
       const existingPAN = await ServiceProvider.findOne({ 'panCard.number': providerData.panCard.number });
       if (existingPAN) {
         throw new ConflictError('PAN number already registered');
       }
-
+    }
       // Validate services and subservices exist
       // if (providerData.services && providerData.services.length > 0) {
       //   const services = await Service.find({ _id: { $in: providerData.services } });
@@ -57,7 +60,7 @@ class ServiceProviderService {
       });
 
       await serviceProvider.save();
-
+      console.log(serviceProvider);
       logger.info('Service provider created successfully', {
         providerId: serviceProvider._id,
         name: serviceProvider.name

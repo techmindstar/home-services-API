@@ -43,6 +43,9 @@ const createServiceProvider = async (req, res, next) => {
     if (req.files) {
       try {
         // Handle Aadhaar card image
+
+      
+
         if (req.files.aadhaarCardImage && req.files.aadhaarCardImage[0]) {
           const aadhaarResult = await s3UploadService.uploadImage(req.files.aadhaarCardImage[0], 'aadhaarCard');
           providerData.aadhaarCard = {
@@ -87,28 +90,28 @@ const createServiceProvider = async (req, res, next) => {
     }
 console.log("providerData",providerData);  
     // Validate Aadhaar card structure
-    if (!providerData.aadhaarCard?.number || !providerData.aadhaarCard?.image) {
-      return res.status(400).json({
-        success: false,
-        message: 'Aadhaar card number and image are required'
-      });
-    }
+    // if (!providerData.aadhaarCard?.number || !providerData.aadhaarCard?.image) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'Aadhaar card number and image are required'
+    //   });
+    // }
 
     // Validate PAN card structure
-    if (!providerData.panCard?.number || !providerData.panCard?.image) {
-      return res.status(400).json({
-        success: false,
-        message: 'PAN card number and image are required'
-      });
-    }
+    // if (!providerData.panCard?.number || !providerData.panCard?.image) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'PAN card number and image are required'
+    //   });
+    // }
 
     // Validate passport photo
-    if (!providerData.passportPhoto) {
-      return res.status(400).json({
-        success: false,
-        message: 'Passport photo is required'
-      });
-    }
+    // if (!providerData.passportPhoto) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'Passport photo is required'
+    //   });
+    // }
 
     const serviceProvider = await serviceProviderService.createServiceProvider(providerData, adminId);
     
@@ -137,6 +140,7 @@ console.log("providerData",providerData);
             verified: serviceProvider.panCard.verified
           },
           passportPhoto: serviceProvider.passportPhoto,
+          address: serviceProvider.address,
           createdAt: serviceProvider.createdAt
         }
       }
