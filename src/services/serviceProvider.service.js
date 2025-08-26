@@ -53,6 +53,7 @@ class ServiceProviderService {
       //   }
       // }
 
+
       const serviceProvider = new ServiceProvider({
         ...providerData,
         createdBy: adminId,

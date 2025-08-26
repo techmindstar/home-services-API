@@ -63,7 +63,6 @@ const ServiceProviderSchema = new mongoose.Schema({
   panCard: {
     number: {
       type: String,
-      unique: true,
     },
     image: {
       type: String, // S3 bucket URL
@@ -190,7 +189,9 @@ const ServiceProviderSchema = new mongoose.Schema({
 ServiceProviderSchema.index({ phoneNumber: 1 });
 ServiceProviderSchema.index({ email: 1 });
 ServiceProviderSchema.index({ 'aadhaarCard.number': 1 });
-ServiceProviderSchema.index({ 'panCard.number': 1 });
+ServiceProviderSchema.index({ 'panCard.number': 1 },
+  { unique: true, partialFilterExpression: { 'panCard.number': { $type: 'string' } } }
+);
 ServiceProviderSchema.index({ status: 1 });
 ServiceProviderSchema.index({ services: 1 });
 ServiceProviderSchema.index({ subservices: 1 });
